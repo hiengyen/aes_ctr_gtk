@@ -13,8 +13,9 @@
 
 ## Thiết lập môi trường lập trình trên Linux (Ubuntu/Debian)
 
-### 1. Cài đặt công cụ biên dịch và thư viện GTK
 ```bash
+### 1. Cài đặt công cụ biên dịch và thư viện GTK
+
 sudo apt update
 sudo apt install build-essential libgtk-3-dev
 
