@@ -4,28 +4,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Cấu trúc lưu trữ dữ liệu giao diện
+// Cấu trúc các thành phần giao diện
 typedef struct {
-  GtkWidget *key_entry;
-  GtkWidget *input_entry;
-  GtkWidget *file_chooser;
-  GtkWidget *output_text;
+  GtkWidget *key_entry;    // ô nhập khóa
+  GtkWidget *input_entry;  // ô nhập dữ liệu mã hóa
+  GtkWidget *file_chooser; // component để chọn tệp encrypted
+  GtkWidget *output_text;  // ô hiển thị kết quả
 } AppWidgets;
 
 // Hàm xử lý mã hóa
 void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
+  // Lấy chuỗi nhập vào từ ô nhập khóa(key_entry) và ô nhập dữ liệu(input_entry)
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *input_str = gtk_entry_get_text(GTK_ENTRY(widgets->input_entry));
+
   unsigned char key[16], nonce[8], *input_data, *output_data;
   int len, padded_len;
   char result[2048] = {0};
 
+  // Kiếm tra tính hợp lệ của khóa, đảm bảo khóa phải có đúng 32 ký tự HEX
+  // (tương ứng với 16 byte AES-128)
   if (strlen(key_str) != 32) {
     gtk_text_buffer_set_text(
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)),
         "Key must be 32 HEX characters!", -1);
     return;
   }
+
+  // Chuyến đổi khóa từ HEX sang byte(mảng key có 16 bytes)
+  // VD: 1A3F -> {"1A", "3F"}
   for (int i = 0; i < 16; i++) {
     if (sscanf(key_str + 2 * i, "%2hhx", &key[i]) != 1) {
       gtk_text_buffer_set_text(
@@ -35,6 +42,7 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     }
   }
 
+  // Kiểm tra độ dài chuỗi đầu vào
   len = strlen(input_str);
   if (len < 15) {
     gtk_text_buffer_set_text(
@@ -42,10 +50,12 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
         "Input must be at least 15 characters!", -1);
     return;
   }
-  input_data = (unsigned char *)malloc(((len / 16) + 1) * 16);
-  padded_len = pad_data((unsigned char *)input_str, input_data, len);
-  output_data = (unsigned char *)malloc(padded_len);
 
+  input_data = (unsigned char *)malloc(((len / 16) + 1) * 16);
+  output_data = (unsigned char *)malloc(padded_len);
+  padded_len = pad_data((unsigned char *)input_str, input_data, len);
+
+  // Mã hóa AES CTR
   if (generate_nonce(nonce, 8) != SUCCESS) {
     gtk_text_buffer_set_text(
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)),
@@ -81,13 +91,18 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
 
 // Hàm xử lý giải mã
 void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
+  // Lấy khóa AES và tệp mã hóa từ người dùng.
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *file_path =
       gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widgets->file_chooser));
+
   unsigned char key[16], nonce[8], *input_data, *output_data;
   size_t len;
   int padded_len, unpadded_len;
   char result[2048] = {0};
+
+  // Kiếm tra tính hợp lệ của khóa, đảm bảo khóa phải có đúng 32 ký tự HEX
+  // (tương ứng với 16 byte AES-128)
 
   if (strlen(key_str) != 32) {
     gtk_text_buffer_set_text(
@@ -104,6 +119,7 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     }
   }
 
+  // Kiểm tra file mã hóa
   if (!file_path || read_file(file_path, &input_data, &len) != SUCCESS) {
     gtk_text_buffer_set_text(
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)),
@@ -118,11 +134,13 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     return;
   }
 
+  // Đọc nội dung file vào bộ nhớ
   memcpy(nonce, input_data, 8);
   padded_len = len - 8;
   unsigned char *ciphertext = input_data + 8;
   output_data = (unsigned char *)malloc(padded_len);
 
+  // Hàm AES CTR
   aes_ctr_crypt(ciphertext, output_data, padded_len, key, nonce);
   unpadded_len = unpad_data(output_data, padded_len);
   write_decrypted_file("decrypted.txt", output_data, unpadded_len);
@@ -149,13 +167,14 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   free(output_data);
 }
 
-// Hàm tạo giao diện responsive
+// Hàm tạo giao diện
 int main(int argc, char *argv[]) {
+  // Khởi tạo GTK
   gtk_init(&argc, &argv);
 
   // Tạo cửa sổ chính
   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-  gtk_window_set_title(GTK_WINDOW(window), "AES CTR Demo");
+  gtk_window_set_title(GTK_WINDOW(window), "AES with CTR Mode");
   gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
@@ -165,7 +184,7 @@ int main(int argc, char *argv[]) {
   gtk_container_add(GTK_CONTAINER(window), main_box);
   gtk_container_set_border_width(GTK_CONTAINER(main_box), 10);
 
-  AppWidgets widgets;
+  AppWidgets widgets; // Biến chứa các thành phần giao diện
 
   // Box cho các trường nhập liệu
   GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
@@ -206,19 +225,19 @@ int main(int argc, char *argv[]) {
   gtk_box_set_homogeneous(GTK_BOX(button_box), TRUE);
   gtk_box_pack_start(GTK_BOX(main_box), button_box, FALSE, FALSE, 0);
 
-  // Nút mã hóa
+  // Gán sự kiện cho nút mã hóa Encrypt
   GtkWidget *encrypt_button = gtk_button_new_with_label("Encrypt");
   gtk_box_pack_start(GTK_BOX(button_box), encrypt_button, TRUE, TRUE, 0);
   g_signal_connect(encrypt_button, "clicked",
                    G_CALLBACK(on_encrypt_button_clicked), &widgets);
 
-  // Nút giải mã
+  // Gán sự kiện cho nút giải mã Decrypt
   GtkWidget *decrypt_button = gtk_button_new_with_label("Decrypt");
   gtk_box_pack_start(GTK_BOX(button_box), decrypt_button, TRUE, TRUE, 0);
   g_signal_connect(decrypt_button, "clicked",
                    G_CALLBACK(on_decrypt_button_clicked), &widgets);
 
-  // Khu vực hiển thị kết quả (mở rộng theo kích thước cửa sổ)
+  // Khu vực hiển thị kết quả - Output
   widgets.output_text = gtk_text_view_new();
   gtk_text_view_set_editable(GTK_TEXT_VIEW(widgets.output_text), FALSE);
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(widgets.output_text),

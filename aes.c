@@ -31,7 +31,6 @@ unsigned char sbox[256] = {
     0xb0, 0x54, 0xbb, 0x16};
 
 // Bảng Rcon
-
 unsigned char Rcon[255] = {
     0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c,
     0xd8, 0xab, 0x4d, 0x9a, 0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
@@ -56,8 +55,8 @@ unsigned char Rcon[255] = {
     0x61, 0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a,
     0x74, 0xe8, 0xcb};
 
-// Triển khai các hàm
 unsigned char getSBoxValue(unsigned char num) { return sbox[num]; }
+unsigned char getRconValue(unsigned char num) { return Rcon[num]; }
 
 void rotate(unsigned char *word) {
   unsigned char c = word[0];
@@ -65,8 +64,6 @@ void rotate(unsigned char *word) {
     word[i] = word[i + 1];
   word[3] = c;
 }
-
-unsigned char getRconValue(unsigned char num) { return Rcon[num]; }
 
 void core(unsigned char *word, int iteration) {
   rotate(word);
@@ -77,6 +74,7 @@ void core(unsigned char *word, int iteration) {
 
 void expandKey(unsigned char *expandedKey, unsigned char *key,
                enum keySize size, size_t expandedKeySize) {
+
   int currentSize = 0, rconIteration = 1, i;
   unsigned char t[4] = {0};
   for (i = 0; i < size; i++)
@@ -210,7 +208,7 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
   free(expandedKey);
   return SUCCESS;
 }
-
+/// Hàm hỗ trợ AES CTR
 int generate_nonce(unsigned char *nonce, int len) {
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0)
@@ -234,8 +232,8 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
                    unsigned char *key, unsigned char *nonce) {
   unsigned char counter[16], keystream[16];
   int i, j;
-  memcpy(counter, nonce, 8);
   memset(counter + 8, 0, 8);
+  memcpy(counter, nonce, 8);
   for (i = 0; i < len; i += 16) {
     aes_encrypt(counter, keystream, key, SIZE_16);
     for (j = 0; j < 16 && (i + j) < len; j++) {
@@ -244,6 +242,8 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
     increment_counter(counter);
   }
 }
+
+/// Hàm xử lý dữ liệu
 
 int pad_data(unsigned char *input, unsigned char *padded, int len) {
   int padded_len = ((len / 16) + 1) * 16;
