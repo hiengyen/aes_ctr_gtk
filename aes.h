@@ -38,7 +38,7 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
 int generate_nonce(unsigned char *nonce, int len);
 void increment_counter(unsigned char *counter);
 void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
-                   unsigned char *key, unsigned char *nonce);
+                   unsigned char *key, unsigned char *nonce, enum keySize size);
 
 // Hàm xử lý dữ liệu
 int pad_data(unsigned char *input, unsigned char *padded, int len);

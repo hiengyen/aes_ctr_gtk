@@ -229,13 +229,14 @@ void increment_counter(unsigned char *counter) {
 }
 
 void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
-                   unsigned char *key, unsigned char *nonce) {
+                   unsigned char *key, unsigned char *nonce,
+                   enum keySize size) {
   unsigned char counter[16], keystream[16];
   int i, j;
   memset(counter + 8, 0, 8);
   memcpy(counter, nonce, 8);
   for (i = 0; i < len; i += 16) {
-    aes_encrypt(counter, keystream, key, SIZE_16);
+    aes_encrypt(counter, keystream, key, size);
     for (j = 0; j < 16 && (i + j) < len; j++) {
       output[i + j] = input[i + j] ^ keystream[j];
     }
@@ -254,7 +255,6 @@ int pad_data(unsigned char *input, unsigned char *padded, int len) {
   }
   return padded_len;
 }
-
 int unpad_data(unsigned char *data, int len) {
   int pad_value = data[len - 1];
   if (pad_value > 16 || pad_value <= 0)
