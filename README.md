@@ -24,12 +24,7 @@ make
 ### 3. Chạy chương trình 
 ./aes_ctr_gtk
 
+
+bash```
 ## Thiết lập môi trường lập trình trên Windows 
-```bash
-### 1. 
-### 2.
-### 3.
-
-
-
 
