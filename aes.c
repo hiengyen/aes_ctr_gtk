@@ -58,20 +58,40 @@ unsigned char Rcon[255] = {
 unsigned char getSBoxValue(unsigned char num) { return sbox[num]; }
 unsigned char getRconValue(unsigned char num) { return Rcon[num]; }
 
-void rotate(unsigned char *word) {
+/*
+ * Dịch vòng trái 4 byte (RotWord) trong quá trình mở rộng khóa.
+ */
+void rotate(unsigned char *word) { // Rotword
   unsigned char c = word[0];
   for (int i = 0; i < 3; i++)
     word[i] = word[i + 1];
   word[3] = c;
 }
 
+/*
+ * [Thực hiện ba bước trong mở rộng khóa: RotWord, SubBytes, và XOR với Rcon].
+ * Gọi rotate(word) để dịch vòng.
+ * Thay thế từng byte trong word bằng giá trị từ S-Box.
+ * XOR byte đầu tiên với giá trị Rcon[iteration].
+ */
 void core(unsigned char *word, int iteration) {
-  rotate(word);
-  for (int i = 0; i < 4; ++i)
+  rotate(word);               // Rotword
+  for (int i = 0; i < 4; ++i) // SubBytes
     word[i] = getSBoxValue(word[i]);
-  word[0] ^= getRconValue(iteration);
+  word[0] ^= getRconValue(iteration); // AddW
 }
 
+/*
+ * →  Mở rộng khóa ban đầu thành tập hợp khóa vòng (round keys) cho các vòng mã
+ *hóa.
+ * Sao chép khóa ban đầu vào expandedKey.
+ * Lặp cho đến khi đạt expandedKeySize:
+ * 1-Lấy 4 byte cuối của expandedKey hiện tại.
+ * 2-Nếu là bội của size(16, 24, hoặc 32), gọi core() để xử lý
+ *RotWord/SubBytes/Rcon.
+ *3-Với khóa 256-bit (SIZE_32), thêm bước SubBytes khi currentSize % size == 16.
+ *4-XOR với 4 byte trước đó để tạo 4 byte mới.
+ */
 void expandKey(unsigned char *expandedKey, unsigned char *key,
                enum keySize size, size_t expandedKeySize) {
 
@@ -80,15 +100,24 @@ void expandKey(unsigned char *expandedKey, unsigned char *key,
   for (i = 0; i < size; i++)
     expandedKey[i] = key[i];
   currentSize += size;
+
   while (currentSize < expandedKeySize) {
+
+    // Lay 4 bytes cuoi cua khoa mo rong
     for (i = 0; i < 4; i++)
       t[i] = expandedKey[(currentSize - 4) + i];
+
+    // Rotword + SubBytes + AddRcon
     if (currentSize % size == 0)
       core(t, rconIteration++);
+    // Với khóa 256-bit (SIZE_32), thêm bước SubBytes khi
+    // currentSize % size == 16.
     if (size == SIZE_32 && (currentSize % size) == 16) {
       for (i = 0; i < 4; i++)
         t[i] = getSBoxValue(t[i]);
     }
+
+    // XOR với 4 bytes trước đó để tạo bytes mới
     for (i = 0; i < 4; i++) {
       expandedKey[currentSize] = expandedKey[currentSize - size] ^ t[i];
       currentSize++;
@@ -96,16 +125,27 @@ void expandKey(unsigned char *expandedKey, unsigned char *key,
   }
 }
 
+/*
+ * Thay thế từng byte trong trạng thái (state) bằng giá trị từ S-Box.
+ */
 void subBytes(unsigned char *state) {
   for (int i = 0; i < 16; i++)
     state[i] = getSBoxValue(state[i]);
 }
 
+/*
+ * Dịch vòng trái các hàng trong ma trận trạng thái (4x4).
+ * Gọi shiftRow() cho từng hàng với số lần dịch tương ứng (hàng 0: 0, hàng 1: 1,
+ * hàng 2: 2, hàng 3: 3).
+ */
 void shiftRows(unsigned char *state) {
   for (int i = 0; i < 4; i++)
     shiftRow(state + i * 4, i);
 }
-
+/*
+ * Dịch vòng trái một hàng của ma trận trạng thái.
+ * Thực hiện nbr lần dịch trái (giống rotate nhưng trên một hàng).
+ */
 void shiftRow(unsigned char *state, unsigned char nbr) {
   for (int i = 0; i < nbr; i++) {
     unsigned char tmp = state[0];
@@ -114,12 +154,21 @@ void shiftRow(unsigned char *state, unsigned char nbr) {
     state[3] = tmp;
   }
 }
-
+/*
+ * XOR trạng thái với khóa vòng.
+ * Duyệt 16 byte của state và XOR với roundKey.
+ */
 void addRoundKey(unsigned char *state, unsigned char *roundKey) {
   for (int i = 0; i < 16; i++)
     state[i] ^= roundKey[i];
 }
 
+/*
+ *Thực hiện phép nhân trong trường Galois GF(2^8) cho bước MixColumns.
+ *Dùng thuật toán nhân bit với đa thức bất khả quy x^8 + x^4 + x^3 + x +
+ *1(0x1b).
+ *Nếu bit cao nhất của a bật, XOR với 0x1b sau khi dịch trái.
+ */
 unsigned char galois_multiplication(unsigned char a, unsigned char b) {
   unsigned char p = 0, hi_bit_set;
   for (int counter = 0; counter < 8; counter++) {
@@ -128,12 +177,16 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b) {
     hi_bit_set = (a & 0x80);
     a <<= 1;
     if (hi_bit_set)
-      a ^= 0x1b;
+      a ^= 0x1b; // XOR với x^8 + x^4 + x^3 + x + 1
     b >>= 1;
   }
   return p;
 }
 
+/*
+ * Trộn các cột của ma trận trạng thái.
+ * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
+ */
 void mixColumns(unsigned char *state) {
   for (int i = 0; i < 4; i++) {
     unsigned char column[4];
@@ -144,7 +197,15 @@ void mixColumns(unsigned char *state) {
       state[(j * 4) + i] = column[j];
   }
 }
-
+/*
+ *Thực hiện phép trộn cột bằng ma trận cố định của AES.
+ *Áp dụng công thức:
+ *column[0] = 2*a + 3*b + c + d ,
+ *column[1] = a + 2*b + 3*c + d ,
+ *column[2] = a + b + 2*c + 3*d ,
+ *column[3] = 3*a + b + c + 2*d ,
+ *(với các phép nhân dùng galois_multiplication).
+ */
 void mixColumn(unsigned char *column) {
   unsigned char cpy[4];
   for (int i = 0; i < 4; i++)
@@ -159,6 +220,10 @@ void mixColumn(unsigned char *column) {
               galois_multiplication(cpy[3], 2);
 }
 
+/*
+ * Thực hiện một vòng mã hóa AES.
+ * subBytes->shiftRows->mixColumns->addRoundKey.
+ */
 void aes_round(unsigned char *state, unsigned char *roundKey) {
   subBytes(state);
   shiftRows(state);
@@ -166,13 +231,22 @@ void aes_round(unsigned char *state, unsigned char *roundKey) {
   addRoundKey(state, roundKey);
 }
 
+/*
+ * Tạo khóa vòng từ khóa mở rộng.
+ * Chuyển 16 bytes từ expandedKey sang round theo thứ tự cột.
+ */
 void createRoundKey(unsigned char *expandedKey, unsigned char *roundKey) {
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++)
       roundKey[(i + (j * 4))] = expandedKey[(i * 4) + j];
   }
 }
-
+/*
+ * Thực hiện toàn bộ quá trình mã hóa AES trên một khối.
+ * 1.Vòng đầu: Chỉ gọi addRoundKey.
+ * 2.(nbrRounds-1) Vòng giữa: Gọi aes_round.
+ * 3.Vòng cuối: Gọi subBytes, shiftRows, addRoundKey (không có mixColumns).
+ */
 void aes_main(unsigned char *state, unsigned char *expandedKey, int nbrRounds) {
   unsigned char roundKey[16];
   createRoundKey(expandedKey, roundKey);
@@ -186,7 +260,14 @@ void aes_main(unsigned char *state, unsigned char *expandedKey, int nbrRounds) {
   shiftRows(state);
   addRoundKey(state, roundKey);
 }
-
+/*
+ *Mã hóa một khối 16 byte bằng AES-ECB.
+ *Xác định số vòng (nbrRounds) dựa trên kích thước khóa (10, 12, hoặc 14).
+ *Cấp phát bộ nhớ cho expandedKey.
+ *Chuyển input thành ma trận 4x4 (block).
+ *Gọi expandKey và aes_main.
+ *Sao chép kết quả vào output.
+ */
 char aes_encrypt(unsigned char *input, unsigned char *output,
                  unsigned char *key, enum keySize size) {
   int nbrRounds = (size == SIZE_16) ? 10 : (size == SIZE_24) ? 12 : 14;
@@ -208,7 +289,10 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
   free(expandedKey);
   return SUCCESS;
 }
-/// Hàm hỗ trợ AES CTR
+
+/* Tạo nonce ngẫu nhiên từ /dev/urandom.
+ * Mở file /dev/urandom, đọc len byte,đóng file.
+ */
 int generate_nonce(unsigned char *nonce, int len) {
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0)
@@ -220,7 +304,10 @@ int generate_nonce(unsigned char *nonce, int len) {
   close(fd);
   return SUCCESS;
 }
-
+/*
+ * Tăng giá trị bộ đếm (counter) lên 1.
+ * Duyệt từ byte cuối (15) đến đầu, tăng byte và thoát nếu không tràn(carry).
+ */
 void increment_counter(unsigned char *counter) {
   for (int i = 15; i >= 0; i--) {
     if (++counter[i])
@@ -228,6 +315,14 @@ void increment_counter(unsigned char *counter) {
   }
 }
 
+/*
+ * Mã hóa/giải mã dữ liệu bằng AES-CTR.
+ * Khởi tạo counter với 8 byte nonce + 8 byte 0.
+ * Duyệt từng khối 16 byte:
+ * 1-Mã hóa counter bằng aes_encrypt để tạo keystream.
+ * 2-XOR input với keystream để tạo output.
+ * 3-Tăng counter.
+ */
 void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
                    unsigned char *key, unsigned char *nonce,
                    enum keySize size) {
@@ -244,24 +339,7 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
   }
 }
 
-/// Hàm xử lý dữ liệu
-
-int pad_data(unsigned char *input, unsigned char *padded, int len) {
-  int padded_len = ((len / 16) + 1) * 16;
-  memcpy(padded, input, len);
-  int pad_value = padded_len - len;
-  for (int i = len; i < padded_len; i++) {
-    padded[i] = (unsigned char)pad_value;
-  }
-  return padded_len;
-}
-int unpad_data(unsigned char *data, int len) {
-  int pad_value = data[len - 1];
-  if (pad_value > 16 || pad_value <= 0)
-    return len;
-  return len - pad_value;
-}
-
+// Đọc nội dung file vào bộ nhớ.
 int read_file(const char *filename, unsigned char **data, size_t *len) {
   FILE *file = fopen(filename, "rb");
   if (!file)
@@ -279,6 +357,7 @@ int read_file(const char *filename, unsigned char **data, size_t *len) {
   return SUCCESS;
 }
 
+// Ghi nonce và dữ liệu mã hóa vào file.
 int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
                int len) {
   FILE *file = fopen(filename, "wb");
@@ -290,6 +369,7 @@ int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
   return SUCCESS;
 }
 
+// Ghi dữ liệu giải mã vào file.
 int write_decrypted_file(const char *filename, unsigned char *data, int len) {
   FILE *file = fopen(filename, "wb");
   if (!file)

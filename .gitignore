@@ -1,5 +1,6 @@
 aes_ctr_gtk
 decrypted.txt
 encrypted.bin
+test/
 
 

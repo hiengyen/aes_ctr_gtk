@@ -42,7 +42,6 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
 
 // Hàm xử lý dữ liệu
 int pad_data(unsigned char *input, unsigned char *padded, int len);
-int unpad_data(unsigned char *data, int len);
 int read_file(const char *filename, unsigned char **data, size_t *len);
 int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
                int len);
