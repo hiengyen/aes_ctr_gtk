@@ -12,7 +12,6 @@
 - **Linux**: GCC, GTK+ 3
 
 ## Thiết lập môi trường lập trình trên Linux (Ubuntu/Debian)
-
 ```bash
 ### 1. Cài đặt công cụ biên dịch và thư viện GTK
 
@@ -25,6 +24,12 @@ make
 ### 3. Chạy chương trình 
 ./aes_ctr_gtk
 
+## Thiết lập môi trường lập trình trên Windows 
+```bash
+### 1. 
+### 2.
+### 3.
 
-## Thiết lập môi trường lập trình trên Windows
+
+
 
