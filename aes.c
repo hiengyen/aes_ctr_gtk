@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 // Bảng S-Box
 unsigned char sbox[256] = {
@@ -294,6 +297,18 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
  * Mở file /dev/urandom, đọc len byte,đóng file.
  */
 int generate_nonce(unsigned char *nonce, int len) {
+#ifdef _WIN32
+  // Trên Windows, dùng rand_s
+  for (int i = 0; i < len; i++) {
+    unsigned int random_value;
+    if (rand_s(&random_value) != 0) {
+      return ERROR_FILE_OPERATION_FAILED;
+    }
+    nonce[i] = (unsigned char)(random_value & 0xFF); // Lấy 1 byte
+  }
+  return SUCCESS;
+#else
+  // Trên Linux, dùng /dev/urandom
   int fd = open("/dev/urandom", O_RDONLY);
   if (fd < 0)
     return ERROR_FILE_OPERATION_FAILED;
@@ -303,6 +318,7 @@ int generate_nonce(unsigned char *nonce, int len) {
   }
   close(fd);
   return SUCCESS;
+#endif
 }
 /*
  * Tăng giá trị bộ đếm (counter) lên 1.
