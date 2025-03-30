@@ -25,5 +25,38 @@ make
 
 ### 3. Chạy chương trình 
 ./aes_ctr_gtk
+
 ```
-```
+
+
+## Thiết lập môi trường lập trình trên Windows
+### 1. Cài đặt MinGW-w64 và GTK+ 3
+- **MinGW-w64**: Tải và cài đặt MinGW-w64 từ [MinGW-w64](https://www.mingw-w64.org/).
+- **GTK+ 3**: Tải GTK+ 3 từ [MSYS2](https://www.msys2.org/). Sau khi cài đặt MSYS2, mở terminal MSYS2 và chạy các lệnh sau để cài đặt GTK+ 3:
+  ```bash
+  pacman -S mingw-w64-x86_64-gtk3
+  ```
+
+### 2. Cấu hình biến môi trường
+- Thêm đường dẫn đến thư mục `bin` của GTK+ 3 (ví dụ: `C:\msys64\mingw64\bin`) vào biến môi trường `PATH`.
+
+### 3. Biên dịch chương trình
+- Mở terminal MSYS2 hoặc MinGW-w64 và chuyển đến thư mục chứa mã nguồn.
+- Chạy lệnh sau để biên dịch chương trình:
+  ```bash
+  make
+  ```
+  Hoặc nếu không sử dụng Makefile, bạn có thể biên dịch trực tiếp bằng lệnh:
+  ```bash
+  gcc -o aes_ctr_gtk aes_ctr_gtk.c aes.c -I<path_to_gtk_include> -L<path_to_gtk_lib> -lgtk-3 -lgobject-2.0 -lglib-2.0 -lgdk-3
+  ```
+  Thay `<path_to_gtk_include>` và `<path_to_gtk_lib>` bằng đường dẫn tương ứng đến thư mục `include` và `lib` của GTK+ 3.
+
+### 4. Chạy chương trình
+- Sau khi biên dịch thành công, chạy chương trình bằng lệnh:
+  ```bash
+  ./aes_ctr_gtk.exe
+  ```
+
+### Lưu ý
+- Đảm bảo rằng tất cả các thư viện cần thiết của GTK+ 3 có trong `PATH` để chương trình có thể chạy mà không gặp lỗi thiếu thư viện.
