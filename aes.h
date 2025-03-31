@@ -10,6 +10,11 @@ enum errorCode {
   ERROR_MEMORY_ALLOCATION_FAILED,
   ERROR_FILE_OPERATION_FAILED,
 };
+// Cấu trúc để lưu thời gian mã hóa và giải mã
+typedef struct {
+  double encryption_time;
+  double decryption_time;
+} TimingResult;
 
 // Kích thước khóa
 enum keySize { SIZE_16 = 16, SIZE_24 = 24, SIZE_32 = 32 };
@@ -38,10 +43,10 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
 int generate_nonce(unsigned char *nonce, int len);
 void increment_counter(unsigned char *counter);
 void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
-                   unsigned char *key, unsigned char *nonce, enum keySize size);
+                   unsigned char *key, unsigned char *nonce, enum keySize size,
+                   TimingResult *timing);
 
 // Hàm xử lý dữ liệu
-int pad_data(unsigned char *input, unsigned char *padded, int len);
 int read_file(const char *filename, unsigned char **data, size_t *len);
 int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
                int len);

@@ -30,6 +30,7 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char nonce[8], *input_data, *output_data;
   int len;
   char result[2048] = {0};
+  TimingResult timing = {0}; // Khởi tạo cấu trúc timing
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
   if (strlen(key_str) != key_len) {
@@ -78,7 +79,7 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     return;
   }
 
-  aes_ctr_crypt(input_data, output_data, len, key, nonce, size);
+  aes_ctr_crypt(input_data, output_data, len, key, nonce, size, &timing);
   write_file("encrypted.bin", nonce, output_data, len);
 
   // Hiển thị kết quả
@@ -97,7 +98,9 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     snprintf(result + strlen(result), sizeof(result) - strlen(result), "%02x ",
              output_data[i]);
   snprintf(result + strlen(result), sizeof(result) - strlen(result),
-           "\nEncryption successful! Saved to encrypted.bin");
+           "\nEncryption Time: %.6f seconds\nEncryption successful !Saved to "
+           "encrypted.bin ",
+           timing.encryption_time);
   gtk_text_buffer_set_text(
       gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)), result,
       -1);
@@ -130,6 +133,7 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char nonce[8], *input_data, *output_data;
   size_t len;
   char result[2048] = {0};
+  TimingResult timing = {0};
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
   if (strlen(key_str) != key_len) {
@@ -174,7 +178,8 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   output_data = (unsigned char *)malloc(ciphertext_len);
 
   // Giải mã AES CTR
-  aes_ctr_crypt(ciphertext, output_data, ciphertext_len, key, nonce, size);
+  aes_ctr_crypt(ciphertext, output_data, ciphertext_len, key, nonce, size,
+                &timing);
   write_decrypted_file("decrypted.txt", output_data, ciphertext_len);
 
   // Hiển thị kết quả
@@ -193,7 +198,9 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     snprintf(result + strlen(result), sizeof(result) - strlen(result), "%c",
              output_data[i]);
   snprintf(result + strlen(result), sizeof(result) - strlen(result),
-           "\nDecryption successful! Saved to decrypted.txt");
+           "\nDecryption Time: %.6f seconds\nEncryption successful !Saved to "
+           "encrypted.bin ",
+           timing.decryption_time);
   gtk_text_buffer_set_text(
       gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)), result,
       -1);

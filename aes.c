@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -340,10 +341,13 @@ void increment_counter(unsigned char *counter) {
  * 3-Tăng counter.
  */
 void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
-                   unsigned char *key, unsigned char *nonce,
-                   enum keySize size) {
+                   unsigned char *key, unsigned char *nonce, enum keySize size,
+                   TimingResult *timing) {
   unsigned char counter[16], keystream[16];
   int i, j;
+  clock_t start, end;
+
+  start = clock();
   memset(counter + 8, 0, 8);
   memcpy(counter, nonce, 8);
   for (i = 0; i < len; i += 16) {
@@ -352,6 +356,25 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
       output[i + j] = input[i + j] ^ keystream[j];
     }
     increment_counter(counter);
+  }
+  end = clock();
+  if (timing)
+    timing->encryption_time = (double)(end - start) / CLOCKS_PER_SEC;
+  // Đo thời gian giải mã (mô phỏng)
+  if (timing) {
+    memset(counter + 8, 0, 8);
+    memcpy(counter, nonce, 8);
+    start = clock();
+    for (i = 0; i < len; i += 16) {
+      aes_encrypt(counter, keystream, key, size);
+      for (j = 0; j < 16 && (i + j) < len; j++) {
+        unsigned char temp = output[i + j] ^ keystream[j]; // Giải mã
+        (void)temp; // Tránh cảnh báo unused variable
+      }
+      increment_counter(counter);
+    }
+    end = clock();
+    timing->decryption_time = (double)(end - start) / CLOCKS_PER_SEC;
   }
 }
 
