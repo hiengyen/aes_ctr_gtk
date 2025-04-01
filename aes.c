@@ -73,8 +73,8 @@ void rotate(unsigned char *word) { // Rotword
 }
 
 /*
- * →  [Thực hiện ba bước trong mở rộng khóa: RotWord, SubBytes, và XOR với
- * Rcon].
+ * → Thực hiện ba bước trong mở rộng khóa: RotWord, SubBytes, và XOR với
+ * Rcon.
  * Gọi rotate(word) để dịch vòng. Thay thế từng byte trong word bằng giá
  * trị từ S-Box. XOR byte đầu tiên với giá trị trong bảng Rcon
  */
@@ -172,34 +172,20 @@ void addRoundKey(unsigned char *state, unsigned char *roundKey) {
  *Dùng thuật toán nhân bit với đa thức bất khả quy x^8 + x^4 + x^3 + x +
  *1(0x1b).
  *Nếu bit cao nhất của a bật, XOR với 0x1b sau khi dịch trái.
+ * Thuật toán Shift-and-Add
  */
 unsigned char galois_multiplication(unsigned char a, unsigned char b) {
   unsigned char p = 0, hi_bit_set;
   for (int counter = 0; counter < 8; counter++) {
-    if (b & 1)
-      p ^= a;
-    hi_bit_set = (a & 0x80);
-    a <<= 1;
+    if (b & 1)               // kiểm tra bit thấp nhất
+      p ^= a;                // Nếu bit thấp nhất của b là 1, cộng (XOR) a vào p
+    hi_bit_set = (a & 0x80); // Kiểm tra bit cao nhất của a
+    a <<= 1;                 // Dịch trái a một bit
     if (hi_bit_set)
-      a ^= 0x1b; // XOR với x^8 + x^4 + x^3 + x + 1
-    b >>= 1;
+      a ^= 0x1b; // Nếu bit cao nhất trước đó là 1, XOR với 0x1b tránh cờ tràn
+    b >>= 1;     // Dịch phải b một bit
   }
   return p;
-}
-
-/*
- * Trộn các cột của ma trận trạng thái.
- * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
- */
-void mixColumns(unsigned char *state) {
-  for (int i = 0; i < 4; i++) {
-    unsigned char column[4];
-    for (int j = 0; j < 4; j++)
-      column[j] = state[(j * 4) + i];
-    mixColumn(column);
-    for (int j = 0; j < 4; j++)
-      state[(j * 4) + i] = column[j];
-  }
 }
 /*
  *Thực hiện phép trộn cột bằng ma trận cố định của AES.
@@ -222,6 +208,21 @@ void mixColumn(unsigned char *column) {
               galois_multiplication(cpy[3], 3);
   column[3] = galois_multiplication(cpy[0], 3) ^ cpy[1] ^ cpy[2] ^
               galois_multiplication(cpy[3], 2);
+}
+
+/*
+ * Trộn các cột của ma trận trạng thái.
+ * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
+ */
+void mixColumns(unsigned char *state) {
+  for (int i = 0; i < 4; i++) {
+    unsigned char column[4];
+    for (int j = 0; j < 4; j++)
+      column[j] = state[(j * 4) + i];
+    mixColumn(column);
+    for (int j = 0; j < 4; j++)
+      state[(j * 4) + i] = column[j];
+  }
 }
 
 /*
