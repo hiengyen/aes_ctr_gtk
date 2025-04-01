@@ -73,16 +73,16 @@ void rotate(unsigned char *word) { // Rotword
 }
 
 /*
- * [Thực hiện ba bước trong mở rộng khóa: RotWord, SubBytes, và XOR với Rcon].
- * Gọi rotate(word) để dịch vòng.
- * Thay thế từng byte trong word bằng giá trị từ S-Box.
- * XOR byte đầu tiên với giá trị Rcon[iteration].
+ * →  [Thực hiện ba bước trong mở rộng khóa: RotWord, SubBytes, và XOR với
+ * Rcon].
+ * Gọi rotate(word) để dịch vòng. Thay thế từng byte trong word bằng giá
+ * trị từ S-Box. XOR byte đầu tiên với giá trị trong bảng Rcon
  */
 void core(unsigned char *word, int iteration) {
   rotate(word);               // Rotword
   for (int i = 0; i < 4; ++i) // SubBytes
     word[i] = getSBoxValue(word[i]);
-  word[0] ^= getRconValue(iteration); // AddW
+  word[0] ^= getRconValue(iteration); // AddW: XOR với Rcon
 }
 
 /*
@@ -130,7 +130,7 @@ void expandKey(unsigned char *expandedKey, unsigned char *key,
 }
 
 /*
- * Thay thế từng byte trong trạng thái (state) bằng giá trị từ S-Box.
+ * Thay thế từng byte trong trạng thái (state) bằng giá trị từ S-Box hay Rotword
  */
 void subBytes(unsigned char *state) {
   for (int i = 0; i < 16; i++)
@@ -358,22 +358,8 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
     increment_counter(counter);
   }
   end = clock();
-  if (timing)
-    timing->encryption_time = (double)(end - start) / CLOCKS_PER_SEC;
-  // Đo thời gian giải mã (mô phỏng)
   if (timing) {
-    memset(counter + 8, 0, 8);
-    memcpy(counter, nonce, 8);
-    start = clock();
-    for (i = 0; i < len; i += 16) {
-      aes_encrypt(counter, keystream, key, size);
-      for (j = 0; j < 16 && (i + j) < len; j++) {
-        unsigned char temp = output[i + j] ^ keystream[j]; // Giải mã
-        (void)temp; // Tránh cảnh báo unused variable
-      }
-      increment_counter(counter);
-    }
-    end = clock();
+    timing->encryption_time = (double)(end - start) / CLOCKS_PER_SEC;
     timing->decryption_time = (double)(end - start) / CLOCKS_PER_SEC;
   }
 }

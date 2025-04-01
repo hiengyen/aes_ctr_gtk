@@ -29,7 +29,7 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char *key = (unsigned char *)malloc(size);
   unsigned char nonce[8], *input_data, *output_data;
   int len;
-  char result[2048] = {0};
+  char result[4096] = {0};
   TimingResult timing = {0}; // Khởi tạo cấu trúc timing
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
@@ -132,7 +132,7 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char *key = (unsigned char *)malloc(size);
   unsigned char nonce[8], *input_data, *output_data;
   size_t len;
-  char result[2048] = {0};
+  char result[4096] = {0};
   TimingResult timing = {0};
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
