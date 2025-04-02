@@ -187,6 +187,21 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b) {
   }
   return p;
 }
+
+/*
+ * Trộn các cột của ma trận trạng thái.
+ * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
+ */
+void mixColumns(unsigned char *state) {
+  for (int i = 0; i < 4; i++) {
+    unsigned char column[4];
+    for (int j = 0; j < 4; j++)
+      column[j] = state[(j * 4) + i];
+    mixColumn(column);
+    for (int j = 0; j < 4; j++)
+      state[(j * 4) + i] = column[j];
+  }
+}
 /*
  *Thực hiện phép trộn cột bằng ma trận cố định của AES.
  *Áp dụng công thức:
@@ -208,21 +223,6 @@ void mixColumn(unsigned char *column) {
               galois_multiplication(cpy[3], 3);
   column[3] = galois_multiplication(cpy[0], 3) ^ cpy[1] ^ cpy[2] ^
               galois_multiplication(cpy[3], 2);
-}
-
-/*
- * Trộn các cột của ma trận trạng thái.
- * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
- */
-void mixColumns(unsigned char *state) {
-  for (int i = 0; i < 4; i++) {
-    unsigned char column[4];
-    for (int j = 0; j < 4; j++)
-      column[j] = state[(j * 4) + i];
-    mixColumn(column);
-    for (int j = 0; j < 4; j++)
-      state[(j * 4) + i] = column[j];
-  }
 }
 
 /*
@@ -365,7 +365,6 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
   }
 }
 
-// Đọc nội dung file vào bộ nhớ.
 int read_file(const char *filename, unsigned char **data, size_t *len) {
   FILE *file = fopen(filename, "rb");
   if (!file)
@@ -383,7 +382,6 @@ int read_file(const char *filename, unsigned char **data, size_t *len) {
   return SUCCESS;
 }
 
-// Ghi nonce và dữ liệu mã hóa vào file.
 int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
                int len) {
   FILE *file = fopen(filename, "wb");
@@ -395,7 +393,6 @@ int write_file(const char *filename, unsigned char *nonce, unsigned char *data,
   return SUCCESS;
 }
 
-// Ghi dữ liệu giải mã vào file.
 int write_decrypted_file(const char *filename, unsigned char *data, int len) {
   FILE *file = fopen(filename, "wb");
   if (!file)

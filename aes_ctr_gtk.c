@@ -12,7 +12,6 @@ typedef struct {
   GtkWidget *output_text;
 } AppWidgets;
 
-// Hàm xử lý mã hóa encrypt
 void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *input_str = gtk_entry_get_text(GTK_ENTRY(widgets->input_entry));
@@ -29,7 +28,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   char result[8192] = {0};
   TimingResult timing = {0};
 
-  // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
   if (strlen(key_str) != key_len) {
     snprintf(result, sizeof(result), "Key must be %d HEX characters!", key_len);
     gtk_text_buffer_set_text(
@@ -39,7 +37,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     return;
   }
 
-  // Chuyển đổi khóa từ HEX sang byte
   for (int i = 0; i < size; i++) {
     if (sscanf(key_str + 2 * i, "%2hhx", &key[i]) != 1) {
       gtk_text_buffer_set_text(
@@ -50,7 +47,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     }
   }
 
-  // Kiểm tra độ dài chuỗi đầu vào
   len = strlen(input_str);
   if (len < 15) {
     gtk_text_buffer_set_text(
@@ -60,12 +56,10 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     return;
   }
 
-  // Chuẩn bị dữ liệu đầu vào và đầu ra
   input_data = (unsigned char *)malloc(len);
   output_data = (unsigned char *)malloc(len);
   memcpy(input_data, input_str, len);
 
-  // Mã hóa AES CTR
   if (generate_nonce(nonce, 8) != SUCCESS) {
     gtk_text_buffer_set_text(
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)),
@@ -79,7 +73,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   aes_ctr_crypt(input_data, output_data, len, key, nonce, size, &timing);
   write_file("encrypted.bin", nonce, output_data, len);
 
-  // Hiển thị kết quả
   snprintf(result, sizeof(result), "Plaintext (HEX): ");
   for (int i = 0; i < len; i++)
     snprintf(result + strlen(result), sizeof(result) - strlen(result), "%02x ",
@@ -113,7 +106,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   free(key);
 }
 
-// Hàm xử lý giải mã decrypt
 void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *file_path =
@@ -131,7 +123,6 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   char result[8192] = {0};
   TimingResult timing = {0};
 
-  // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
   if (strlen(key_str) != key_len) {
     snprintf(result, sizeof(result), "Key must be %d HEX characters!", key_len);
     gtk_text_buffer_set_text(
@@ -150,7 +141,6 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     }
   }
 
-  // Kiểm tra file mã hóa
   if (!file_path || read_file(file_path, &input_data, &len) != SUCCESS) {
     gtk_text_buffer_set_text(
         gtk_text_view_get_buffer(GTK_TEXT_VIEW(widgets->output_text)),
@@ -167,18 +157,15 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
     return;
   }
 
-  // Tách nonce và ciphertext từ file
   memcpy(nonce, input_data, 8);
   int ciphertext_len = len - 8;
   unsigned char *ciphertext = input_data + 8;
   output_data = (unsigned char *)malloc(ciphertext_len);
 
-  // Giải mã AES CTR
   aes_ctr_crypt(ciphertext, output_data, ciphertext_len, key, nonce, size,
                 &timing);
   write_decrypted_file("decrypted.txt", output_data, ciphertext_len);
 
-  // Hiển thị kết quả
   snprintf(result, sizeof(result), "Nonce (HEX): ");
   for (int i = 0; i < 8; i++)
     snprintf(result + strlen(result), sizeof(result) - strlen(result), "%02x ",
@@ -212,7 +199,6 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   free(key);
 }
 
-// Hàm tạo giao diện
 int main(int argc, char *argv[]) {
   gtk_init(&argc, &argv);
 
@@ -226,7 +212,7 @@ int main(int argc, char *argv[]) {
   gtk_container_add(GTK_CONTAINER(window), main_box);
   gtk_container_set_border_width(GTK_CONTAINER(main_box), 10);
 
-  AppWidgets widgets; 
+  AppWidgets widgets;
 
   GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   gtk_box_pack_start(GTK_BOX(main_box), input_box, FALSE, FALSE, 0);
@@ -256,7 +242,6 @@ int main(int argc, char *argv[]) {
                      0);
   gtk_box_pack_start(GTK_BOX(input_box), key_size_box, FALSE, FALSE, 0);
 
-  //input
   GtkWidget *input_data_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
   GtkWidget *input_label = gtk_label_new("Input (min 15 chars):");
   gtk_box_pack_start(GTK_BOX(input_data_box), input_label, FALSE, FALSE, 0);
@@ -298,7 +283,6 @@ int main(int argc, char *argv[]) {
   g_signal_connect(clear_button, "clicked", G_CALLBACK(on_clear_button_clicked),
                    &widgets);
 
-  //Output
   widgets.output_text = gtk_text_view_new();
   gtk_text_view_set_editable(GTK_TEXT_VIEW(widgets.output_text), FALSE);
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(widgets.output_text),
