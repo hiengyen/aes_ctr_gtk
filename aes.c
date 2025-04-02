@@ -130,7 +130,7 @@ void expandKey(unsigned char *expandedKey, unsigned char *key,
 }
 
 /*
- * Thay thế từng byte trong trạng thái (state) bằng giá trị từ S-Box hay Rotword
+ * Thay thế từng byte trong trạng thái (state) bằng giá trị từ S-Box
  */
 void subBytes(unsigned char *state) {
   for (int i = 0; i < 16; i++)
@@ -189,20 +189,6 @@ unsigned char galois_multiplication(unsigned char a, unsigned char b) {
 }
 
 /*
- * Trộn các cột của ma trận trạng thái.
- * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
- */
-void mixColumns(unsigned char *state) {
-  for (int i = 0; i < 4; i++) {
-    unsigned char column[4];
-    for (int j = 0; j < 4; j++)
-      column[j] = state[(j * 4) + i];
-    mixColumn(column);
-    for (int j = 0; j < 4; j++)
-      state[(j * 4) + i] = column[j];
-  }
-}
-/*
  *Thực hiện phép trộn cột bằng ma trận cố định của AES.
  *Áp dụng công thức:
  *column[0] = 2*a + 3*b + c + d ,
@@ -223,6 +209,20 @@ void mixColumn(unsigned char *column) {
               galois_multiplication(cpy[3], 3);
   column[3] = galois_multiplication(cpy[0], 3) ^ cpy[1] ^ cpy[2] ^
               galois_multiplication(cpy[3], 2);
+}
+/*
+ * Trộn các cột của ma trận trạng thái.
+ * Duyệt từng cột (4 cột), gọi mixColumn() để trộn.
+ */
+void mixColumns(unsigned char *state) {
+  for (int i = 0; i < 4; i++) {
+    unsigned char column[4];
+    for (int j = 0; j < 4; j++)
+      column[j] = state[(j * 4) + i];
+    mixColumn(column);
+    for (int j = 0; j < 4; j++)
+      state[(j * 4) + i] = column[j];
+  }
 }
 
 /*

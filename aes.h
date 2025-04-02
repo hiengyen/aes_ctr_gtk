@@ -14,7 +14,6 @@ typedef struct {
   double decryption_time;
 } TimingResult;
 
-// Kích thước khóa
 enum keySize { SIZE_16 = 16, SIZE_24 = 24, SIZE_32 = 32 };
 
 unsigned char getSBoxValue(unsigned char num);
