@@ -4,19 +4,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Cấu trúc các thành phần giao diện
 typedef struct {
   GtkWidget *key_size_combo;
-  GtkWidget *key_entry;    // Ô nhập khóa
-  GtkWidget *input_entry;  // Ô nhập dữ liệu mã hóa
-  GtkWidget *file_chooser; // Component để chọn tệp encrypted
-  GtkWidget *output_text;  // Ô hiển thị kết quả
+  GtkWidget *key_entry;
+  GtkWidget *input_entry;
+  GtkWidget *file_chooser;
+  GtkWidget *output_text;
 } AppWidgets;
 
 // Hàm xử lý mã hóa encrypt
 void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
-  // Lấy chuỗi nhập vào từ ô nhập khóa (key_entry) và ô nhập dữ liệu
-  // (input_entry)
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *input_str = gtk_entry_get_text(GTK_ENTRY(widgets->input_entry));
   int key_size_idx =
@@ -29,8 +26,8 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char *key = (unsigned char *)malloc(size);
   unsigned char nonce[8], *input_data, *output_data;
   int len;
-  char result[4096] = {0};
-  TimingResult timing = {0}; // Khởi tạo cấu trúc timing
+  char result[8192] = {0};
+  TimingResult timing = {0};
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
   if (strlen(key_str) != key_len) {
@@ -118,7 +115,6 @@ void on_encrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
 
 // Hàm xử lý giải mã decrypt
 void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
-  // Lấy khóa AES và tệp mã hóa từ người dùng
   const char *key_str = gtk_entry_get_text(GTK_ENTRY(widgets->key_entry));
   const char *file_path =
       gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(widgets->file_chooser));
@@ -132,7 +128,7 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
   unsigned char *key = (unsigned char *)malloc(size);
   unsigned char nonce[8], *input_data, *output_data;
   size_t len;
-  char result[4096] = {0};
+  char result[8192] = {0};
   TimingResult timing = {0};
 
   // Kiểm tra tính hợp lệ của khóa (32, 48, 64 HEX chars)
@@ -218,28 +214,23 @@ void on_decrypt_button_clicked(GtkButton *button, AppWidgets *widgets) {
 
 // Hàm tạo giao diện
 int main(int argc, char *argv[]) {
-  // Khởi tạo GTK
   gtk_init(&argc, &argv);
 
-  // Tạo cửa sổ chính
   GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(window), "AES with CTR Mode");
   gtk_window_set_default_size(GTK_WINDOW(window), 600, 400);
   gtk_window_set_position(GTK_WINDOW(window), GTK_WIN_POS_CENTER);
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
-  // Sử dụng GtkBox dọc làm container chính
   GtkWidget *main_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
   gtk_container_add(GTK_CONTAINER(window), main_box);
   gtk_container_set_border_width(GTK_CONTAINER(main_box), 10);
 
-  AppWidgets widgets; // Biến chứa các thành phần giao diện
+  AppWidgets widgets; 
 
-  // Box cho các trường nhập liệu
   GtkWidget *input_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
   gtk_box_pack_start(GTK_BOX(main_box), input_box, FALSE, FALSE, 0);
 
-  // Nhập khóa
   GtkWidget *key_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
   GtkWidget *key_label = gtk_label_new("Key (HEX):");
   gtk_box_pack_start(GTK_BOX(key_box), key_label, FALSE, FALSE, 0);
@@ -249,7 +240,6 @@ int main(int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(key_box), widgets.key_entry, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(input_box), key_box, FALSE, FALSE, 0);
 
-  // Chọn chế độ 128, 192, 256 bit
   GtkWidget *key_size_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
   GtkWidget *key_size_label = gtk_label_new("Key Size:");
   gtk_box_pack_start(GTK_BOX(key_size_box), key_size_label, FALSE, FALSE, 0);
@@ -266,7 +256,7 @@ int main(int argc, char *argv[]) {
                      0);
   gtk_box_pack_start(GTK_BOX(input_box), key_size_box, FALSE, FALSE, 0);
 
-  // Nhập dữ liệu (mã hóa)
+  //input
   GtkWidget *input_data_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
   GtkWidget *input_label = gtk_label_new("Input (min 15 chars):");
   gtk_box_pack_start(GTK_BOX(input_data_box), input_label, FALSE, FALSE, 0);
@@ -277,7 +267,6 @@ int main(int argc, char *argv[]) {
                      0);
   gtk_box_pack_start(GTK_BOX(input_box), input_data_box, FALSE, FALSE, 0);
 
-  // Chọn file (giải mã)
   GtkWidget *file_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
   GtkWidget *file_label = gtk_label_new("Ciphertext file:");
   gtk_box_pack_start(GTK_BOX(file_box), file_label, FALSE, FALSE, 0);
@@ -286,24 +275,20 @@ int main(int argc, char *argv[]) {
   gtk_box_pack_start(GTK_BOX(file_box), widgets.file_chooser, TRUE, TRUE, 0);
   gtk_box_pack_start(GTK_BOX(input_box), file_box, FALSE, FALSE, 0);
 
-  // Box cho các nút bấm
   GtkWidget *button_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
   gtk_box_set_homogeneous(GTK_BOX(button_box), TRUE);
   gtk_box_pack_start(GTK_BOX(main_box), button_box, FALSE, FALSE, 0);
 
-  // Gán sự kiện cho nút mã hóa Encrypt
   GtkWidget *encrypt_button = gtk_button_new_with_label("Encrypt");
   gtk_box_pack_start(GTK_BOX(button_box), encrypt_button, TRUE, TRUE, 0);
   g_signal_connect(encrypt_button, "clicked",
                    G_CALLBACK(on_encrypt_button_clicked), &widgets);
 
-  // Gán sự kiện cho nút giải mã Decrypt
   GtkWidget *decrypt_button = gtk_button_new_with_label("Decrypt");
   gtk_box_pack_start(GTK_BOX(button_box), decrypt_button, TRUE, TRUE, 0);
   g_signal_connect(decrypt_button, "clicked",
                    G_CALLBACK(on_decrypt_button_clicked), &widgets);
 
-  // Clear Output Button
   GtkWidget *clear_button = gtk_button_new_with_label("Clear");
   gtk_box_pack_start(GTK_BOX(button_box), clear_button, TRUE, TRUE, 0);
   void on_clear_button_clicked(GtkButton * button, AppWidgets * widgets) {
@@ -313,7 +298,7 @@ int main(int argc, char *argv[]) {
   g_signal_connect(clear_button, "clicked", G_CALLBACK(on_clear_button_clicked),
                    &widgets);
 
-  // Khu vực hiển thị kết quả - Output
+  //Output
   widgets.output_text = gtk_text_view_new();
   gtk_text_view_set_editable(GTK_TEXT_VIEW(widgets.output_text), FALSE);
   gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(widgets.output_text),
