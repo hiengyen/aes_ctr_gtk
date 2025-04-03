@@ -241,6 +241,7 @@ void aes_round(unsigned char *state, unsigned char *roundKey) {
  * Chuyển 16 bytes từ expandedKey sang round theo thứ tự cột.
  */
 void createRoundKey(unsigned char *expandedKey, unsigned char *roundKey) {
+  // truy xuất theo column_major i là cột, j là hàng
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++)
       roundKey[(i + (j * 4))] = expandedKey[(i * 4) + j];
@@ -256,8 +257,10 @@ void aes_main(unsigned char *state, unsigned char *expandedKey, int nbrRounds) {
   unsigned char roundKey[16];
   createRoundKey(expandedKey, roundKey);
   addRoundKey(state, roundKey);
+  // tạo roundkey cho moi vong
   for (int i = 1; i < nbrRounds; i++) {
     createRoundKey(expandedKey + 16 * i, roundKey);
+    addRoundKey(state, roundKey);
     aes_round(state, roundKey);
   }
   createRoundKey(expandedKey + 16 * nbrRounds, roundKey);
@@ -266,7 +269,7 @@ void aes_main(unsigned char *state, unsigned char *expandedKey, int nbrRounds) {
   addRoundKey(state, roundKey);
 }
 /*
- *Mã hóa một khối 16 byte bằng AES-ECB.
+ *Mã hóa một khối 16 byte
  *Xác định số vòng (nbrRounds) dựa trên kích thước khóa (10, 12, hoặc 14).
  *Cấp phát bộ nhớ cho expandedKey.
  *Chuyển input thành ma trận 4x4 (block).
@@ -287,6 +290,7 @@ char aes_encrypt(unsigned char *input, unsigned char *output,
   }
   expandKey(expandedKey, key, size, expandedKeySize);
   aes_main(block, expandedKey, nbrRounds);
+  // truy xuất theo column_major i là cột, j là hàng
   for (int i = 0; i < 4; i++) {
     for (int j = 0; j < 4; j++)
       output[(i * 4) + j] = block[(i + (j * 4))];
@@ -324,7 +328,7 @@ int generate_nonce(unsigned char *nonce, int len) {
 }
 /*
  * Tăng giá trị bộ đếm (counter) lên 1.
- * Duyệt từ byte cuối (15) đến đầu, tăng byte và thoát nếu không tràn(carry).
+ * Duyệt từ byte cuối (15) đến đầu, tăng byte và thoát nếu không tràn(cờ carry).
  */
 void increment_counter(unsigned char *counter) {
   for (int i = 15; i >= 0; i--) {
@@ -360,8 +364,8 @@ void aes_ctr_crypt(unsigned char *input, unsigned char *output, int len,
   }
   end = clock();
   if (timing) {
-    timing->encryption_time = (double)(end - start) / CLOCKS_PER_SEC;
-    timing->decryption_time = (double)(end - start) / CLOCKS_PER_SEC;
+    timing->encryption_time = (double)(end - start) / CLOCKS_PER_SEC * 1000000;
+    timing->decryption_time = (double)(end - start) / CLOCKS_PER_SEC * 1000000;
   }
 }
 
