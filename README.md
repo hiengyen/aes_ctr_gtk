@@ -1,62 +1,61 @@
 # AES CTR Encrypt/Decrypt GUI GTK+
 
-Đây là một chương trình mã hóa và giải mã AES trong chế độ CTR (Counter Mode) với giao diện đồ họa sử dụng GTK+ 3. Chương trình cho phép người dùng nhập dữ liệu, mã hóa, giải mã và hiển thị kết quả (plaintext, nonce, ciphertext) trên giao diện.
+This is an AES encryption and decryption program in CTR (Counter Mode) with a graphical user interface using GTK+ 3. The program allows users to input data, encrypt, decrypt, and display results (plaintext, nonce, ciphertext) on the interface.
 
-## Tính năng
-- Mã hóa dữ liệu nhập từ giao diện với khóa 128-bit (32 ký tự HEX), 192-bit (48 ký tự HEX), hoặc 256-bit (64 ký tự HEX).
-- Giải mã dữ liệu từ file chứa `nonce` (8 byte) và `ciphertext`.
-- Hiển thị plaintext, nonce, và ciphertext dưới dạng HEX trên giao diện.
-- Lưu kết quả mã hóa vào file `encrypted.bin` và kết quả giải mã vào file `decrypted.txt`.
-- Hỗ trợ giao diện đơn giản với các nút Encrypt, Decrypt, và Clear.
+## Features
+- Encrypt data input from the interface with 128-bit (32 HEX characters), 192-bit (48 HEX characters), or 256-bit (64 HEX characters) keys.
+- Decrypt data from files containing `nonce` (8 bytes) and `ciphertext`.
+- Display plaintext, nonce, and ciphertext in HEX format on the interface.
+- Save encryption results to `encrypted.bin` file and decryption results to `decrypted.txt` file.
+- Support simple interface with Encrypt, Decrypt, and Clear buttons.
 
-## Yêu cầu hệ thống
+## System Requirements
 - **Linux**: GCC, GTK+ 3
 - **Windows**: MinGW-w64, GTK+ 3
 
-## Thiết lập môi trường lập trình trên Linux (Ubuntu/Debian)
+## Setting up Development Environment on Linux (Ubuntu/Debian)
 ```bash
-### 1. Cài đặt công cụ biên dịch và thư viện GTK
+### 1. Install compiler tools and GTK libraries
 
 sudo apt update
 sudo apt install build-essential libgtk-3-dev
 
-### 2. Biên dịch chương trình 
+### 2. Compile the program 
 make
 
-### 3. Chạy chương trình 
+### 3. Run the program 
 ./aes_ctr_gtk
 
 ```
 
-
-## Thiết lập môi trường lập trình trên Windows
-### 1. Cài đặt MinGW-w64 và GTK+ 3
-- **MinGW-w64**: Tải và cài đặt MinGW-w64 từ [MinGW-w64](https://www.mingw-w64.org/).
-- **GTK+ 3**: Tải GTK+ 3 từ [MSYS2](https://www.msys2.org/). Sau khi cài đặt MSYS2, mở terminal MSYS2 và chạy các lệnh sau để cài đặt GTK+ 3:
+## Setting up Development Environment on Windows
+### 1. Install MinGW-w64 and GTK+ 3
+- **MinGW-w64**: Download and install MinGW-w64 from [MinGW-w64](https://www.mingw-w64.org/).
+- **GTK+ 3**: Download GTK+ 3 from [MSYS2](https://www.msys2.org/). After installing MSYS2, open the MSYS2 terminal and run the following commands to install GTK+ 3:
   ```bash
   pacman -S mingw-w64-x86_64-gtk3
   ```
 
-### 2. Cấu hình biến môi trường
-- Thêm đường dẫn đến thư mục `bin` của GTK+ 3 (ví dụ: `C:\msys64\mingw64\bin`) vào biến môi trường `PATH`.
+### 2. Configure Environment Variables
+- Add the path to the GTK+ 3 `bin` directory (e.g., `C:\msys64\mingw64\bin`) to the `PATH` environment variable.
 
-### 3. Biên dịch chương trình
-- Mở terminal MSYS2 hoặc MinGW-w64 và chuyển đến thư mục chứa mã nguồn.
-- Chạy lệnh sau để biên dịch chương trình:
+### 3. Compile the Program
+- Open MSYS2 or MinGW-w64 terminal and navigate to the directory containing the source code.
+- Run the following command to compile the program:
   ```bash
   make
   ```
-  Hoặc nếu không sử dụng Makefile, bạn có thể biên dịch trực tiếp bằng lệnh:
+  Or if not using Makefile, you can compile directly with the command:
   ```bash
   gcc -o aes_ctr_gtk aes_ctr_gtk.c aes.c -I<path_to_gtk_include> -L<path_to_gtk_lib> -lgtk-3 -lgobject-2.0 -lglib-2.0 -lgdk-3
   ```
-  Thay `<path_to_gtk_include>` và `<path_to_gtk_lib>` bằng đường dẫn tương ứng đến thư mục `include` và `lib` của GTK+ 3.
+  Replace `<path_to_gtk_include>` and `<path_to_gtk_lib>` with the corresponding paths to the `include` and `lib` directories of GTK+ 3.
 
-### 4. Chạy chương trình
-- Sau khi biên dịch thành công, chạy chương trình bằng lệnh:
+### 4. Run the Program
+- After successful compilation, run the program with the command:
   ```bash
   ./aes_ctr_gtk.exe
   ```
 
-### Lưu ý
-- Đảm bảo rằng tất cả các thư viện cần thiết của GTK+ 3 có trong `PATH` để chương trình có thể chạy mà không gặp lỗi thiếu thư viện.
+### Notes
+- Ensure that all necessary GTK+ 3 libraries are in the `PATH` so the program can run without missing library errors.
